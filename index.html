@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词存储与展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+            overflow-y: visible;
+        }
+        
+        h1 {
+            color: #3f51b5;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .input-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        #word-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #303f9f;
+        }
+        
+        .words-list {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .word-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .word-text {
+            font-size: 16px;
+        }
+        
+        .remove-btn {
+            color: #e53935;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .fullscreen-display {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #3f51b5;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 1000;
+            text-decoration: none;
+            overflow-y: auto;
+            padding: 80px 0 120px 0;
+        }
+        
+        .display-word {
+            font-size: 5rem;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .display-controls {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            background-color: rgba(63, 81, 181, 0.9);
+            padding: 10px 0;
+            z-index: 1010;
+        }
+        
+        .fullscreen-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            background-color: #4caf50;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        #explanation, #example {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            margin-bottom: 15px;
+        }
+        
+        #explanation.show, #example.show {
+            opacity: 1;
+        }
+        
+        /* Anki评级按钮样式 */
+        .rating-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+        
+        .rating-btn {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .rating-btn.again {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .rating-btn.hard {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .rating-btn.good {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .rating-btn.easy {
+            background-color: #2196f3;
+            color: white;
+        }
+        
+        /* 添加导出功能样式 */
+        .export-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .export-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .export-option {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .export-option h3 {
+            margin-top: 0;
+            color: #3f51b5;
+            font-size: 18px;
+        }
+        
+        .export-option p {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .export-settings {
+            margin-top: 10px;
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .setting-row label {
+            flex: 3;
+            font-size: 14px;
+        }
+        
+        .setting-row input, .setting-row select {
+            flex: 2;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        @media (max-width: 600px) {
+            .display-word {
+                font-size: 3rem;
+            }
+        }
+        
+        /* 添加造句纠错功能样式 */
+        .sentence-practice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 30px;
+            width: 80%;
+            max-width: 700px;
+            margin-bottom: 60px;
+        }
+        
+        .sentence-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .sentence-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .sentence-feedback {
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+                opacity: 0;
+            transition: opacity 0.5s ease;
+            }
+        
+        .sentence-feedback.show {
+                opacity: 1;
+        }
+        
+        .feedback-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffeb3b;
+        }
+        
+        .error-item {
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 3px solid #ff9800;
+        }
+        
+        .corrected-sentence {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(76, 175, 80, 0.1);
+            border-radius: 5px;
+            border-left: 3px solid #4caf50;
+        }
+        
+        .sentence-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .check-btn, .skip-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .check-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .skip-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+        <div class="container">
+        <h1>英语单词存储与展示</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="word-input" placeholder="输入英语单词...">
+                <button id="add-btn" class="btn">添加</button>
+                        </div>
+            <div class="input-group">
+                <textarea id="text-process-input" placeholder="输入需要处理的文本..." style="flex: 1; min-height: 80px; padding: 10px; resize: vertical;"></textarea>
+                    </div>
+            <div class="input-group" style="margin-top: 10px;">
+                <button id="process-text-btn" class="btn">处理文本</button>
+                <div id="process-loading" class="loading hidden"></div>
+                </div>
+            <div class="input-group" style="margin-top: 15px;">
+                <input type="file" id="file-input" accept=".txt" style="flex: 1;">
+                <button id="import-btn" class="btn">导入词汇表</button>
+                        </div>
+            <button id="show-btn" class="btn fullscreen-btn" style="margin-top: 15px;">开始全屏展示</button>
+            </div>
+            
+        <div class="words-list" id="words-list">
+            <p id="empty-message">暂无单词，请添加单词。</p>
+            <!-- 单词列表将在这里动态生成 -->
+        </div>
+        
+        <!-- 添加导出功能区域 -->
+        <div class="export-section">
+            <h2 style="margin-top: 0; color: #3f51b5;">导出单词</h2>
+            <p>将您的单词列表导出为CSV格式或Anki可识别的格式</p>
+            
+            <div class="export-options">
+                <div class="export-option">
+                    <h3>CSV格式导出</h3>
+                    <p>基本CSV格式，可以导入到Excel或其他软件</p>
+                    <div class="export-settings">
+                        <div class="setting-row">
+                            <label>包含释义和例句</label>
+                            <input type="checkbox" id="include-explanations" checked>
+                </div>
+                        <div class="setting-row">
+                            <label>包含学习进度</label>
+                            <input type="checkbox" id="include-progress" checked>
+                        </div>
+                    </div>
+                    <button id="export-csv-btn" class="btn" style="margin-top: 15px;">导出CSV</button>
+            </div>
+            
+                <div class="export-option">
+                    <h3>Anki导出</h3>
+                    <p>包含学习进度和遗忘曲线数据的Anki格式</p>
+                    <div class="export-settings">
+                        <div class="setting-row">
+                            <label>卡片模板</label>
+                            <select id="anki-template">
+                                <option value="basic">基础模板</option>
+                                <option value="advanced" selected>高级模板(含例句)</option>
+                                <option value="cloze">填空模板</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label>初始简易度</label>
+                            <input type="number" id="initial-ease" value="250" min="130" max="500">
+                        </div>
+                        <div class="setting-row">
+                            <label>包含法法释义</label>
+                            <input type="checkbox" id="include-french-def" checked>
+                    </div>
+                </div>
+                    <button id="export-anki-btn" class="btn" style="margin-top: 15px;">导出Anki格式</button>
+            </div>
+                    </div>
+                </div>
+            </div>
+            
+    <div id="fullscreen-display" class="fullscreen-display hidden">
+        <div class="display-word" id="display-word"></div>
+        <div id="explanation" style="font-size: 1.5rem; max-width: 80%; text-align: center; margin-top: 20px;"></div>
+        <div id="example" style="font-size: 1.5rem; max-width: 80%; text-align: center; margin-top: 20px; font-style: italic;"></div>
+        
+        <!-- 添加造句练习区域 -->
+        <div class="sentence-practice" id="sentence-practice" style="display: none;">
+            <h3 style="color: white; margin-bottom: 15px;">请使用这个单词造一个句子：</h3>
+            <textarea class="sentence-input" id="sentence-input" placeholder="请用英语造句..." rows="3"></textarea>
+            <div class="sentence-feedback" id="sentence-feedback">
+                <div class="feedback-header">语法分析：</div>
+                <div id="feedback-content"></div>
+                <div class="corrected-sentence" id="corrected-sentence"></div>
+                    </div>
+            <div class="sentence-buttons">
+                <button class="check-btn" id="check-sentence-btn">检查句子</button>
+                <button class="skip-btn" id="skip-sentence-btn">跳过练习</button>
+                </div>
+                    </div>
+        
+        <div class="rating-buttons hidden" id="rating-buttons">
+            <button class="rating-btn again" data-rating="1">再次学习</button>
+            <button class="rating-btn hard" data-rating="2">困难</button>
+            <button class="rating-btn good" data-rating="3">良好</button>
+            <button class="rating-btn easy" data-rating="4">简单</button>
+                </div>
+        
+        <div class="display-controls">
+            <button id="image-btn" class="btn" onclick="searchWordImages('english word')">查图</button>
+            <button id="search-btn" class="btn">查询详细释义</button>
+            <button id="translate-btn" class="btn">获取解释与例句</button>
+            <button id="practice-btn" class="btn">练习造句</button>
+            <button id="next-btn" class="btn">下一个</button>
+            <button id="exit-btn" class="btn">退出</button>
+            </div>
+        </div>
+        
+    <script>
+        // 初始化本地存储
+        let words = JSON.parse(localStorage.getItem('frenchWords')) || [];
+        let wordStats = JSON.parse(localStorage.getItem('frenchWordStats')) || {};
+        const wordInput = document.getElementById('word-input');
+        const addBtn = document.getElementById('add-btn');
+        const wordsList = document.getElementById('words-list');
+        const emptyMessage = document.getElementById('empty-message');
+        const showBtn = document.getElementById('show-btn');
+        const fullscreenDisplay = document.getElementById('fullscreen-display');
+        const displayWord = document.getElementById('display-word');
+        const explanation = document.getElementById('explanation');
+        const example = document.getElementById('example');
+        const nextBtn = document.getElementById('next-btn');
+        const exitBtn = document.getElementById('exit-btn');
+        const fileInput = document.getElementById('file-input');
+        const importBtn = document.getElementById('import-btn');
+        const searchBtn = document.getElementById('search-btn');
+        const translateBtn = document.getElementById('translate-btn');
+        const ratingButtons = document.getElementById('rating-buttons');
+        
+        // API密钥
+        const apiKey = 'sk-G8fwDqN0IaB0hayInoXa7I72vwSdd9V4C2K9c1wwmncvEHjH';
+        let currentWord = '';
+        let currentIndex = -1;
+        
+        // Anki算法相关常量
+        const AGAIN_INTERVAL = 1; // 1天
+        const HARD_INTERVAL_FACTOR = 1.2;
+        const GOOD_INTERVAL_FACTOR = 2.0;
+        const EASY_INTERVAL_FACTOR = 3.0;
+        const INITIAL_EASE = 2.5; // 初始难度系数
+        const MINIMUM_EASE = 1.3; // 最小难度系数
+        const EASE_MODIFIER_AGAIN = -0.2; // 再次学习时难度系数的调整值
+        const EASE_MODIFIER_HARD = -0.15; // 困难时难度系数的调整值
+        const EASE_MODIFIER_GOOD = 0; // 良好时难度系数的调整值
+        const EASE_MODIFIER_EASY = 0.15; // 简单时难度系数的调整值
+        
+        // 添加造句练习相关变量
+        const sentencePractice = document.getElementById('sentence-practice');
+        const sentenceInput = document.getElementById('sentence-input');
+        const sentenceFeedback = document.getElementById('sentence-feedback');
+        const feedbackContent = document.getElementById('feedback-content');
+        const correctedSentence = document.getElementById('corrected-sentence');
+        const checkSentenceBtn = document.getElementById('check-sentence-btn');
+        const skipSentenceBtn = document.getElementById('skip-sentence-btn');
+        const practiceBtn = document.getElementById('practice-btn');
+        
+        // 更新单词列表显示
+        function updateWordsList() {
+            if (words.length === 0) {
+                emptyMessage.classList.remove('hidden');
+                wordsList.innerHTML = '';
+                wordsList.appendChild(emptyMessage);
+                return;
+            }
+            
+            emptyMessage.classList.add('hidden');
+            wordsList.innerHTML = '';
+            
+            words.forEach((word, index) => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item';
+                
+                const wordText = document.createElement('span');
+                wordText.className = 'word-text';
+                wordText.textContent = word;
+                
+                // 添加显示间隔信息
+                if (wordStats[word]) {
+                    const dueDate = new Date(wordStats[word].nextReview);
+                    const today = new Date();
+                    const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    const statusSpan = document.createElement('span');
+                    statusSpan.style.marginLeft = '10px';
+                    statusSpan.style.fontSize = '12px';
+                    if (daysUntilDue <= 0) {
+                        statusSpan.textContent = '今天到期';
+                        statusSpan.style.color = '#f44336';
+                    } else {
+                        statusSpan.textContent = `${daysUntilDue}天后复习`;
+                        statusSpan.style.color = '#4caf50';
+                    }
+                    wordText.appendChild(statusSpan);
+                }
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.onclick = () => removeWord(index);
+                
+                wordItem.appendChild(wordText);
+                wordItem.appendChild(removeBtn);
+                wordsList.appendChild(wordItem);
+            });
+        }
+        
+        // 添加单词
+        function addWord() {
+            const word = wordInput.value.trim();
+            if (word && !words.includes(word)) {
+                words.push(word);
+                localStorage.setItem('frenchWords', JSON.stringify(words));
+                
+                // 初始化单词统计数据
+                if (!wordStats[word]) {
+                    wordStats[word] = {
+                        ease: INITIAL_EASE,
+                        interval: 0,
+                        reviews: 0,
+                        nextReview: new Date().toISOString(),
+                        lastReview: null
+                    };
+                    localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+                }
+                
+                wordInput.value = '';
+                updateWordsList();
+            } else if (words.includes(word)) {
+                alert('该单词已存在！');
+            }
+        }
+        
+        // 删除单词
+        function removeWord(index) {
+            const word = words[index];
+            words.splice(index, 1);
+            localStorage.setItem('frenchWords', JSON.stringify(words));
+            
+            // 删除单词统计数据
+            if (wordStats[word]) {
+                delete wordStats[word];
+                localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+            }
+            
+            updateWordsList();
+        }
+        
+        // 获取下一个要复习的单词
+        function getNextReviewWord() {
+            const today = new Date();
+            
+            // 查找到期的单词
+            const dueWords = words.filter(word => {
+                if (!wordStats[word]) return true; // 没有统计数据的单词优先显示
+                const nextReview = new Date(wordStats[word].nextReview);
+                return nextReview <= today;
+            });
+            
+            if (dueWords.length > 0) {
+                // 有到期单词，随机选择一个
+                const randomIndex = Math.floor(Math.random() * dueWords.length);
+                return dueWords[randomIndex];
+            } else {
+                // 没有到期单词，按照最接近到期的顺序选择
+                if (words.length === 0) return null;
+                
+                const sortedWords = [...words].sort((a, b) => {
+                    const dateA = wordStats[a] ? new Date(wordStats[a].nextReview) : new Date();
+                    const dateB = wordStats[b] ? new Date(wordStats[b].nextReview) : new Date();
+                    return dateA - dateB;
+                });
+                
+                return sortedWords[0];
+            }
+        }
+        
+        // 随机展示单词
+        function showRandomWord() {
+            if (words.length === 0) {
+                alert('请先添加单词！');
+                return;
+            }
+            
+            // 使用Anki算法选择下一个单词
+            currentWord = getNextReviewWord();
+            currentIndex = words.indexOf(currentWord);
+            
+            displayWord.textContent = currentWord;
+            
+            // 清除之前的解释和例句
+            explanation.textContent = '';
+            example.textContent = '';
+            explanation.classList.remove('show');
+            example.classList.remove('show');
+            
+            // 隐藏评级按钮，直到用户查看解释
+            ratingButtons.classList.add('hidden');
+            
+            // 隐藏造句练习区域
+            sentencePractice.style.display = 'none';
+            sentenceInput.value = '';
+            sentenceFeedback.classList.remove('show');
+            
+            fullscreenDisplay.classList.remove('hidden');
+        }
+        
+        // 评级单词记忆
+        function rateWord(rating) {
+            if (!wordStats[currentWord]) {
+                wordStats[currentWord] = {
+                    ease: INITIAL_EASE,
+                    interval: 0,
+                    reviews: 0,
+                    nextReview: new Date().toISOString(),
+                    lastReview: null
+                };
+            }
+            
+            const stats = wordStats[currentWord];
+            stats.reviews++;
+            stats.lastReview = new Date().toISOString();
+            
+            // 根据评级计算新的间隔和难度系数
+            let newInterval = 0;
+            let easeModifier = 0;
+            
+            switch (rating) {
+                case 1: // 再次学习
+                    newInterval = AGAIN_INTERVAL;
+                    easeModifier = EASE_MODIFIER_AGAIN;
+                    break;
+                case 2: // 困难
+                    newInterval = Math.max(1, Math.ceil(stats.interval * HARD_INTERVAL_FACTOR));
+                    easeModifier = EASE_MODIFIER_HARD;
+                    break;
+                case 3: // 良好
+                    newInterval = Math.ceil(stats.interval * stats.ease * GOOD_INTERVAL_FACTOR);
+                    if (newInterval < 1) newInterval = 1;
+                    easeModifier = EASE_MODIFIER_GOOD;
+                    break;
+                case 4: // 简单
+                    newInterval = Math.ceil(stats.interval * stats.ease * EASY_INTERVAL_FACTOR);
+                    if (newInterval < 1) newInterval = 2;
+                    easeModifier = EASE_MODIFIER_EASY;
+                    break;
+            }
+            
+            // 更新难度系数
+            stats.ease += easeModifier;
+            if (stats.ease < MINIMUM_EASE) stats.ease = MINIMUM_EASE;
+            
+            // 更新间隔和下次复习时间
+            stats.interval = newInterval;
+            const nextReviewDate = new Date();
+            nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
+            stats.nextReview = nextReviewDate.toISOString();
+            
+            // 保存更新
+            wordStats[currentWord] = stats;
+            localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+            
+            // 显示下一个单词
+            showRandomWord();
+        }
+        
+        // 退出全屏展示
+        function exitFullscreen() {
+            fullscreenDisplay.classList.add('hidden');
+            updateWordsList(); // 更新列表显示复习状态
+        }
+        
+        // 查询详细释义（跳转到剑桥词典）
+        function searchWordDetails() {
+            window.open(`https://dictionary.cambridge.org/zhs/%E8%AF%8D%E5%85%B8/%E8%8B%B1%E8%AF%AD-%E6%B1%89%E8%AF%AD-%E7%AE%80%E4%BD%93/${encodeURIComponent(currentWord)}`, '_blank');
+        }
+        // 查图（跳转到google图片）
+        function searchWordImages() {
+            // 构建包含固定模板"English word"的搜索查询
+            const searchQuery = `English word "${currentWord}" meaning`;
+            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(searchQuery)}`, '_blank');
+        }
+        // 使用API获取解释和例句
+        async function getExplanationAndExample() {
+            // 如果已经显示，则不重复请求
+            if (explanation.classList.contains('show')) {
+                return;
+            }
+            
+            // 显示加载中
+            const loadingIndicator = document.createElement('span');
+            loadingIndicator.className = 'loading';
+            translateBtn.appendChild(loadingIndicator);
+            translateBtn.disabled = true;
+            
+            try {
+                    const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                            messages: [
+                                {
+                                    role: 'system',
+                                content: '你是一位英语教师，擅长对英语单词进行解释和给出例句。请用简单的中文解释英语单词的核心含义，然后给出一个简洁的英语例句，并且对例句进行分析。格式为：\n解释：[简短中文解释]\n英语释义：[简短英语解释]\n例句：[一个简短的英语例句]\n例句分析：[例句详细分析]'
+                            },
+                            {
+                                role: 'user',
+                                content: `请用地道的语言解释英语单词："${currentWord}"`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 200
+                        })
+                    });
+
+                    const data = await response.json();
+                
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const content = data.choices[0].message.content;
+                    
+                    // 分离解释和例句
+                    const parts = content.split('\n');
+                    let chineseExplanation = '';
+                    let frenchExplanation = '';
+                    let exampleSentence = '';
+                    let sentenceAnalysis = '';
+                    
+                    for (const part of parts) {
+                        if (part.startsWith('解释：')) {
+                            chineseExplanation = part.replace('解释：', '').trim();
+                        } else if (part.startsWith('英语释义：')) {
+                            englishExplanation = part.replace('英语释义：', '').trim();
+                        } else if (part.startsWith('例句：')) {
+                            exampleSentence = part.replace('例句：', '').trim();
+                        } else if (part.startsWith('例句分析：')) {
+                            sentenceAnalysis = part.replace('例句分析：', '').trim();
+                        }
+                    }   
+                    
+                    // 显示解释和例句
+                    explanation.innerHTML = `<strong>解释：</strong>${chineseExplanation}<br><strong>英语释义：</strong>${englishExplanation}`;
+                    example.innerHTML = `<strong>例句：</strong>${exampleSentence}<br><strong>例句分析：</strong>${sentenceAnalysis}`;
+                    
+                    // 缓存结果
+                    localStorage.setItem(`def_${currentWord}`, JSON.stringify({
+                        frenchDef: frenchExplanation,
+                        chineseDef: chineseExplanation,
+                        example: exampleSentence,
+                        exampleAnalysis: sentenceAnalysis
+                    }));
+                    
+                    // 淡入效果
+                    setTimeout(() => {
+                        explanation.classList.add('show');
+                        setTimeout(() => {
+                            example.classList.add('show');
+                            
+                            // 显示评级按钮
+                            setTimeout(() => {
+                                ratingButtons.classList.remove('hidden');
+                                // 滚动到评级按钮位置，确保它们可见
+                                ratingButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 500);
+                        }, 300);
+                    }, 100);
+                } else {
+                    explanation.textContent = '无法获取解释，请尝试查询详细释义。';
+                    explanation.classList.add('show');
+                }
+            } catch (error) {
+                console.error('API请求错误:', error);
+                explanation.textContent = '获取解释时出错，请尝试查询详细释义。';
+                explanation.classList.add('show');
+            } finally {
+                // 移除加载指示器
+                translateBtn.removeChild(loadingIndicator);
+                translateBtn.disabled = false;
+            }
+        }
+        
+        // 导入文件功能
+        function importWordsFromFile() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请先选择一个文本文件！');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                
+                // 尝试多种分隔符识别单词
+                let newWords = [];
+                
+                // 首先尝试按行分割
+                let lineWords = content.split(/\r?\n/);
+                
+                // 如果一行中可能有多个单词（用空格、逗号、分号等分隔）
+                lineWords.forEach(line => {
+                    if (line.trim()) {
+                        // 检查是否有常见分隔符
+                        if (line.includes(',') || line.includes(';') || line.includes('\t')) {
+                            // 按常见分隔符分割
+                            const splitWords = line.split(/[,;\t]+/).map(w => w.trim()).filter(w => w);
+                            newWords = newWords.concat(splitWords);
+                        } else {
+                            // 按空格分割，可能是词组或句子，这里假设单个单词
+                            const spaceWords = line.split(/\s+/).map(w => w.trim())
+                                .filter(w => w && w.length > 1); // 过滤掉单字母
+                            newWords = newWords.concat(spaceWords);
+                        }
+                    }
+                });
+                
+                // 清理和去重
+                newWords = newWords.map(word => {
+                    // 移除标点符号和数字
+                    return word.replace(/[0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/g, '').trim();
+                })
+                .filter(word => word && word.length > 1) // 过滤空字符串和单字母
+                .filter((word, index, self) => self.indexOf(word) === index); // 去重
+                
+                let addedCount = 0;
+                
+                // 添加到现有列表，避免重复
+                newWords.forEach(word => {
+                    if (!words.includes(word)) {
+                        words.push(word);
+                        addedCount++;
+                    }
+                });
+                
+                // 保存并更新显示
+                localStorage.setItem('frenchWords', JSON.stringify(words));
+                updateWordsList();
+                
+                alert(`成功导入 ${addedCount} 个新单词！`);
+                fileInput.value = ''; // 重置文件输入
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // 批量清空单词列表
+        function clearAllWords() {
+            if (confirm('确定要清空所有单词吗？此操作不可撤销！')) {
+                words = [];
+                localStorage.setItem('frenchWords', JSON.stringify(words));
+                updateWordsList();
+            }
+        }
+        
+        // 添加按钮事件监听
+        document.querySelectorAll('.rating-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const rating = parseInt(btn.getAttribute('data-rating'));
+                rateWord(rating);
+            });
+        });
+        
+        addBtn.addEventListener('click', addWord);
+        wordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addWord();
+        });
+        
+        importBtn.addEventListener('click', importWordsFromFile);
+        
+        showBtn.addEventListener('click', showRandomWord);
+        
+        searchBtn.addEventListener('click', searchWordDetails);
+        
+        translateBtn.addEventListener('click', getExplanationAndExample);
+        
+        practiceBtn.addEventListener('click', showSentencePractice);
+        
+        checkSentenceBtn.addEventListener('click', checkSentence);
+        
+        skipSentenceBtn.addEventListener('click', skipSentence);
+        
+        nextBtn.addEventListener('click', showRandomWord);
+        
+        exitBtn.addEventListener('click', exitFullscreen);
+        
+        // 添加导出按钮事件监听
+        document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+        document.getElementById('export-anki-btn').addEventListener('click', exportToAnki);
+        
+        // 添加文本处理按钮的事件监听
+        document.getElementById('process-text-btn').addEventListener('click', processText);
+        
+        // 添加清空按钮
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'btn';
+        clearBtn.textContent = '清空所有';
+        clearBtn.style.backgroundColor = '#e53935';
+        clearBtn.style.marginTop = '15px';
+        clearBtn.onclick = clearAllWords;
+        document.querySelector('.input-section').appendChild(clearBtn);
+        
+        // 在 API 密钥下方添加文本处理函数
+        async function processText() {
+            const textInput = document.getElementById('text-process-input');
+            const text = textInput.value.trim();
+            const processLoading = document.getElementById('process-loading');
+            
+                if (!text) {
+                alert('请输入需要处理的文本！');
+                    return;
+                }
+            
+            // 显示加载指示器
+            processLoading.classList.remove('hidden');
+            document.getElementById('process-text-btn').disabled = true;
+            
+            try {
+                const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'Vous êtes un expert en traitement de texte français. Veuillez aider l\'utilisateur à extraire tous les mots français du texte donné, un mot par ligne, en supprimant les doublons, la ponctuation et les chiffres, et en vous assurant que les mots français sont normalisés.'
+                            },
+                            {
+                                role: 'user',
+                                content: `Veuillez traiter le texte suivant et extraire tous les mots français (删掉中文释义):\n${text}`
+                            }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 1000
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const processedWords = data.choices[0].message.content
+                        .split(/\n/)
+                        .map(word => word.trim())
+                        .filter(word => word && word.length > 1);
+                    
+                    let addedCount = 0;
+                    processedWords.forEach(word => {
+                        if (!words.includes(word)) {
+                            words.push(word);
+                            addedCount++;
+                        }
+                    });
+                    
+                    // 保存并更新显示
+                    localStorage.setItem('frenchWords', JSON.stringify(words));
+                    updateWordsList();
+                    
+                    // 清空输入框
+                    textInput.value = '';
+                    alert(`成功处理文本并添加 ${addedCount} 个新单词！`);
+                }
+                } catch (error) {
+                console.error('处理文本时出错:', error);
+                alert('处理文本时出错，请稍后重试！');
+                } finally {
+                // 隐藏加载指示器
+                processLoading.classList.add('hidden');
+                document.getElementById('process-text-btn').disabled = false;
+            }
+        }
+        
+        // 导出功能实现
+        
+        // 导出为CSV格式
+        async function exportToCSV() {
+            if (words.length === 0) {
+                alert('当前没有单词可以导出！');
+                    return;
+                }
+
+            const includeExplanations = document.getElementById('include-explanations').checked;
+            const includeProgress = document.getElementById('include-progress').checked;
+            
+            // 显示加载状态
+            const btn = document.getElementById('export-csv-btn');
+            const originalText = btn.textContent;
+            btn.textContent = '正在导出...';
+            btn.disabled = true;
+            
+            try {
+                // 准备CSV内容
+                let csvContent = '单词,法语释义,中文释义,例句';
+                if (includeProgress) {
+                    csvContent += ',学习进度,下次复习日期';
+                }
+                csvContent += '\n';
+                
+                // 为每个单词获取释义和例句（如果需要）
+                for (const word of words) {
+                    let row = [word];
+                    
+                    if (includeExplanations) {
+                        // 获取单词的法法释义和例句
+                        let frenchDef = '';
+                        let chineseDef = '';
+                        let example = '';
+                        
+                        try {
+                            // 检查是否已有缓存数据
+                            if (localStorage.getItem(`def_${word}`)) {
+                                const cachedData = JSON.parse(localStorage.getItem(`def_${word}`));
+                                frenchDef = cachedData.frenchDef || '';
+                                chineseDef = cachedData.chineseDef || '';
+                                example = cachedData.example || '';
+                            } else {
+                                // 调用API获取释义
+                                const data = await getWordDefinitionAndExample(word);
+                                frenchDef = data.frenchDef || '';
+                                chineseDef = data.chineseDef || '';
+                                example = data.example || '';
+                                
+                                // 缓存结果
+                                localStorage.setItem(`def_${word}`, JSON.stringify({
+                                    frenchDef,
+                                    chineseDef,
+                                    example
+                                }));
+                            }
+                } catch (error) {
+                            console.error(`获取单词"${word}"释义失败:`, error);
+                            // 使用空值占位
+                            frenchDef = '';
+                            chineseDef = '';
+                            example = '';
+                        }
+                        
+                        row.push(csvEscape(frenchDef));
+                        row.push(csvEscape(chineseDef));
+                        row.push(csvEscape(example));
+                    } else {
+                        row.push('', '', ''); // 空的释义和例句列
+                    }
+                    
+                    if (includeProgress) {
+                        const stats = wordStats[word] || {
+                            interval: 0,
+                            nextReview: new Date().toISOString()
+                        };
+                        
+                        // 计算学习进度（0-新词，1-学习中，2-已掌握）
+                        let progress = 0;
+                        if (stats.reviews > 0) {
+                            progress = stats.interval > 14 ? 2 : 1;
+                        }
+                        
+                        row.push(progress);
+                        row.push(new Date(stats.nextReview).toLocaleDateString());
+                    }
+                    
+                    csvContent += row.join(',') + '\n';
+                }
+                
+                // 创建下载链接
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `french_words_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('CSV导出成功！');
+                } catch (error) {
+                console.error('导出CSV出错:', error);
+                alert('导出失败，请重试！');
+                } finally {
+                // 恢复按钮状态
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // 导出为Anki格式
+        async function exportToAnki() {
+            if (words.length === 0) {
+                alert('当前没有单词可以导出！');
+                    return;
+                }
+            
+            const template = document.getElementById('anki-template').value;
+            const initialEase = document.getElementById('initial-ease').value;
+            const includeFrenchDef = document.getElementById('include-french-def').checked;
+            
+            // 显示加载状态
+            const btn = document.getElementById('export-anki-btn');
+            const originalText = btn.textContent;
+            btn.textContent = '正在导出...';
+            btn.disabled = true;
+            
+            try {
+                // 准备Anki导入格式（使用分号分隔）
+                let ankiContent = '';
+                
+                // 添加必要字段（取决于选择的模板）
+                switch (template) {
+                    case 'basic':
+                        ankiContent = '正面;背面;标签;学习阶段;简易度;间隔;到期日期\n';
+                        break;
+                    case 'advanced':
+                        ankiContent = '单词;法法释义;中文释义;例句;例句分析;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
+                        break;
+                    case 'cloze':
+                        ankiContent = '填空文本;单词;法法释义;中文释义;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
+                        break;
+                }
+                
+                // 为每个单词生成Anki卡片
+                for (const word of words) {
+                    // 获取单词的释义和例句
+                    let frenchDef = '';
+                    let chineseDef = '';
+                    let example = '';
+                    let exampleAnalysis = '';
+                    
+                    try {
+                        // 检查是否已有缓存数据
+                        if (localStorage.getItem(`def_${word}`)) {
+                            const cachedData = JSON.parse(localStorage.getItem(`def_${word}`));
+                            frenchDef = cachedData.frenchDef || '';
+                            chineseDef = cachedData.chineseDef || '';
+                            example = cachedData.example || '';
+                            exampleAnalysis = cachedData.exampleAnalysis || '';
+                        } else {
+                            // 调用API获取释义
+                            const data = await getWordDefinitionAndExample(word);
+                            frenchDef = data.frenchDef || '';
+                            chineseDef = data.chineseDef || '';
+                            example = data.example || '';
+                            exampleAnalysis = data.exampleAnalysis || '';
+                            
+                            // 缓存结果
+                            localStorage.setItem(`def_${word}`, JSON.stringify({
+                                frenchDef,
+                                chineseDef,
+                                example,
+                                exampleAnalysis
+                            }));
+                        }
+                } catch (error) {
+                        console.error(`获取单词"${word}"释义失败:`, error);
+                        // 使用空值占位
+                        frenchDef = '';
+                        chineseDef = '';
+                        example = '';
+                        exampleAnalysis = '';
+                    }
+                    
+                    // 获取学习进度数据
+                    const stats = wordStats[word] || {
+                        ease: initialEase / 100, // 转换为Anki的格式
+                        interval: 0,
+                        reviews: 0,
+                        nextReview: new Date().toISOString()
+                    };
+                    
+                    // 计算Anki格式的学习阶段（0=新词, 1=学习中, 2=已掌握）
+                    let learningStage = 0;
+                    if (stats.reviews > 0) {
+                        learningStage = stats.interval > 14 ? 2 : 1;
+                    }
+                    
+                    // 获取用户的造句记录
+                    let userSentence = '';
+                    let correctedSentence = '';
+                    const practiceData = JSON.parse(localStorage.getItem(`practice_${word}`) || '[]');
+                    if (practiceData.length > 0) {
+                        const latestPractice = practiceData[practiceData.length - 1];
+                        userSentence = latestPractice.userSentence || '';
+                        correctedSentence = latestPractice.corrected || '';
+                    }
+                    
+                    // 根据模板格式化卡片内容
+                    let row = [];
+                    switch (template) {
+                        case 'basic':
+                            row = [
+                                ankiEscape(word), // 正面
+                                ankiEscape(`${chineseDef}${includeFrenchDef ? '<br><br><i>' + frenchDef + '</i>' : ''}`), // 背面
+                                'French::Vocabulary', // 标签
+                                learningStage,
+                                stats.ease,
+                                stats.interval,
+                                new Date(stats.nextReview).toISOString().split('T')[0]
+                            ];
+                            break;
+                            
+                        case 'advanced':
+                            row = [
+                                ankiEscape(word), // 单词
+                                ankiEscape(englishDef), // 英语释义
+                                ankiEscape(chineseDef), // 中文释义
+                                ankiEscape(example), // 例句
+                                ankiEscape(exampleAnalysis), // 例句分析
+                                ankiEscape(userSentence), // 用户造句
+                                ankiEscape(correctedSentence), // 纠正后的句子
+                                'English::Vocabulary', // 标签
+                                learningStage,
+                                stats.ease,
+                                stats.interval,
+                                new Date(stats.nextReview).toISOString().split('T')[0]
+                            ];
+                            break;
+                            
+                        case 'cloze':
+                            // 将单词替换为填空格式
+                            let clozeText = '';
+                            if (example) {
+                                clozeText = example.replace(new RegExp(`\\b${word}\\b`, 'gi'), `{{c1::${word}}}`);
+                            } else {
+                                clozeText = `{{c1::${word}}}: ${chineseDef}`;
+                            }
+                            
+                            row = [
+                                ankiEscape(clozeText), // 填空文本
+                                ankiEscape(word), // 单词
+                                ankiEscape(englishDef), // 英语释义
+                                ankiEscape(chineseDef), // 中文释义
+                                ankiEscape(userSentence), // 用户造句
+                                ankiEscape(correctedSentence), // 纠正后的句子
+                                'English::Vocabulary', // 标签
+                                learningStage,
+                                stats.ease,
+                                stats.interval,
+                                new Date(stats.nextReview).toISOString().split('T')[0]
+                            ];
+                            break;
+                    }
+                    
+                    ankiContent += row.join(';') + '\n';
+                }
+                
+                // 创建下载链接
+                const blob = new Blob([ankiContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', `anki_french_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('Anki导出成功！请在Anki中导入此CSV文件。');
+            } catch (error) {
+                console.error('导出Anki格式出错:', error);
+                alert('导出失败，请重试！');
+            } finally {
+                // 恢复按钮状态
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // CSV格式转义函数
+        function csvEscape(text) {
+            if (!text) return '';
+            // 如果文本包含逗号、引号或换行符，则用引号包裹并处理内部引号
+            if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                return '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        }
+        
+        // Anki格式转义函数
+        function ankiEscape(text) {
+            if (!text) return '';
+            // 转义分号和换行符
+            return text.replace(/;/g, ',').replace(/\n/g, '<br>');
+        }
+        
+        // 使用API获取单词的释义和例句
+        async function getWordDefinitionAndExample(word) {
+            try {
+                const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一位英语教师，擅长对英语单词进行解释和给出例句。请用简单的中文解释英语单词的核心含义，然后提供英语释义，给出一个例句，并对例句进行简要分析。回答格式为JSON格式：\n{"englishDef": "英语释义", "chineseDef": "中文释义", "example": "例句", "exampleAnalysis": "例句分析"}'
+                            },
+                            {
+                                role: 'user',
+                                content: `请提供英语单词"${word}"的释义和例句`
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 300
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const content = data.choices[0].message.content;
+                    
+                    try {
+                        // 尝试解析JSON响应
+                        const jsonResponse = JSON.parse(content);
+                        return {
+                            frenchDef: jsonResponse.frenchDef || '',
+                            chineseDef: jsonResponse.chineseDef || '',
+                            example: jsonResponse.example || '',
+                            exampleAnalysis: jsonResponse.exampleAnalysis || ''
+                        };
+                    } catch (error) {
+                        console.error('解析API响应失败:', error);
+                        
+                        // 尝试从文本中提取信息
+                        const englishDefMatch = content.match(/英语释义[:：]\s*(.+)/);
+                        const chineseDefMatch = content.match(/中文释义[:：]\s*(.+)/);
+                        const exampleMatch = content.match(/例句[:：]\s*(.+)/);
+                        const analysisMatch = content.match(/例句分析[:：]\s*(.+)/);
+                        
+                        return {
+                            frenchDef: frenchDefMatch ? frenchDefMatch[1].trim() : '',
+                            chineseDef: chineseDefMatch ? chineseDefMatch[1].trim() : '',
+                            example: exampleMatch ? exampleMatch[1].trim() : '',
+                            exampleAnalysis: analysisMatch ? analysisMatch[1].trim() : ''
+                        };
+                    }
+                }
+                
+                return {
+                    frenchDef: '',
+                    chineseDef: '',
+                    example: '',
+                    exampleAnalysis: ''
+                };
+            } catch (error) {
+                console.error('API请求错误:', error);
+                throw error;
+            }
+        }
+        
+        // 添加造句功能
+        function showSentencePractice() {
+            console.log('尝试显示造句练习区域'); // 添加调试语句
+            
+            // 确保已经显示了解释
+            if (!explanation.classList.contains('show')) {
+                alert('请先获取单词解释和例句');
+                    return;
+                }
+
+            // 显示造句练习区域
+            sentencePractice.style.display = 'flex';
+            sentenceInput.placeholder = `请使用"${currentWord}"造一个法语句子...`;
+            sentenceFeedback.classList.remove('show');
+            sentenceInput.focus();
+            
+            // 隐藏评级按钮，待完成造句后再显示
+            ratingButtons.classList.add('hidden');
+        }
+        
+        // 检查造句
+        async function checkSentence() {
+            const sentence = sentenceInput.value.trim();
+            if (!sentence) {
+                alert('请输入句子');
+                        return;
+                    }
+
+            // 取消检查句子是否包含当前单词的功能
+            
+            // 显示加载中
+            const loadingIndicator = document.createElement('span');
+            loadingIndicator.className = 'loading';
+            checkSentenceBtn.appendChild(loadingIndicator);
+            checkSentenceBtn.disabled = true;
+            
+            try {
+                const response = await fetch('https://api.aigc.bar/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                        model: 'gpt-4o',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一位严谨的英语语法专家，能够分析用户的英语句子。请特别注意：\n\n1. 仔细确认单词的单复数形式，避免误判。检查名词和形容词的性数配合是否正确。\n2. 谨慎判断专业术语或特殊表达，某些固定搭配可能有自己的规则。\n3. 在作出判断前，请先多角度思考用户的表达是否可能是正确的。\n\n请以下面的格式回复：\n\n语法分析：[分析用户句子中的语法问题，注意避免误判单复数]\n\n改进建议：[如有必要，给出具体的改进建议]\n\n修正后的句子：[如果用户句子有误，提供修正后的句子；如果基本正确，可以提供更地道的表达]'
+                            },
+                            {
+                                role: 'user',
+                                content: `评估这个英语句子，检查是否有语法错误或搭配问题。单词是"${currentWord}"，用户的句子是："${sentence}"。请特别注意不要对单复数形式做出误判。`
+                            }
+                        ],
+                        temperature: 0.5,
+                        max_tokens: 500
+                        })
+                    });
+
+                const data = await response.json();
+                
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    const content = data.choices[0].message.content;
+                    
+                    // 解析返回的内容
+                    const grammarAnalysisMatch = content.match(/语法分析[:：]([\s\S]*?)(?=\n\n改进建议|$)/);
+                    const suggestionsMatch = content.match(/改进建议[:：]([\s\S]*?)(?=\n\n修正后的句子|$)/);
+                    const correctedMatch = content.match(/修正后的句子[:：]([\s\S]*?)$/);
+                    
+                    let feedbackHtml = '';
+                    
+                    if (grammarAnalysisMatch && grammarAnalysisMatch[1]) {
+                        feedbackHtml += `<div class="error-item">${grammarAnalysisMatch[1].trim()}</div>`;
+                    }
+                    
+                    if (suggestionsMatch && suggestionsMatch[1]) {
+                        feedbackHtml += `<div class="error-item"><strong>改进建议：</strong>${suggestionsMatch[1].trim()}</div>`;
+                    }
+                    
+                    feedbackContent.innerHTML = feedbackHtml;
+                    
+                    if (correctedMatch && correctedMatch[1]) {
+                        correctedSentence.innerHTML = `<strong>修正后的句子：</strong>${correctedMatch[1].trim()}`;
+                    } else {
+                        correctedSentence.innerHTML = '';
+                    }
+                    
+                    // 显示反馈
+                    sentenceFeedback.classList.add('show');
+                    
+                    // 保存用户的造句和反馈
+                    const practiceData = JSON.parse(localStorage.getItem(`practice_${currentWord}`) || '[]');
+                    practiceData.push({
+                        date: new Date().toISOString(),
+                        userSentence: sentence,
+                        feedback: content,
+                        corrected: correctedMatch ? correctedMatch[1].trim() : ''
+                    });
+                    localStorage.setItem(`practice_${currentWord}`, JSON.stringify(practiceData));
+                    
+                    // 显示评级按钮，让用户继续操作
+                    setTimeout(() => {
+                        ratingButtons.classList.remove('hidden');
+                        // 滚动到评级按钮位置
+                        ratingButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 1000);
+                    
+                } else {
+                    feedbackContent.innerHTML = '<div class="error-item">无法分析句子，请重试</div>';
+                    sentenceFeedback.classList.add('show');
+                }
+            } catch (error) {
+                console.error('API请求错误:', error);
+                feedbackContent.innerHTML = '<div class="error-item">分析句子时出错，请重试</div>';
+                sentenceFeedback.classList.add('show');
+            } finally {
+                // 移除加载指示器
+                checkSentenceBtn.removeChild(loadingIndicator);
+                checkSentenceBtn.disabled = false;
+            }
+        }
+        
+        // 跳过造句
+        function skipSentence() {
+            // 隐藏造句区域
+            sentencePractice.style.display = 'none';
+            
+            // 显示评级按钮
+            ratingButtons.classList.remove('hidden');
+        }
+        
+        // 初始化页面
+        function initPage() {
+            updateWordsList();
+            
+            // 添加按钮事件监听
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const rating = parseInt(btn.getAttribute('data-rating'));
+                    rateWord(rating);
+                });
+            });
+            
+            addBtn.addEventListener('click', addWord);
+            wordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addWord();
+            });
+            
+            importBtn.addEventListener('click', importWordsFromFile);
+            
+            showBtn.addEventListener('click', showRandomWord);
+            
+            searchBtn.addEventListener('click', searchWordDetails);
+            
+            translateBtn.addEventListener('click', getExplanationAndExample);
+            
+            practiceBtn.addEventListener('click', showSentencePractice);
+            
+            checkSentenceBtn.addEventListener('click', checkSentence);
+            
+            skipSentenceBtn.addEventListener('click', skipSentence);
+            
+            nextBtn.addEventListener('click', showRandomWord);
+            
+            exitBtn.addEventListener('click', exitFullscreen);
+            
+            // 添加导出按钮事件监听
+            document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+            document.getElementById('export-anki-btn').addEventListener('click', exportToAnki);
+            
+            // 添加文本处理按钮的事件监听
+            document.getElementById('process-text-btn').addEventListener('click', processText);
+            
+            // 添加清空按钮
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'btn';
+            clearBtn.textContent = '清空所有';
+            clearBtn.style.backgroundColor = '#e53935';
+            clearBtn.style.marginTop = '15px';
+            clearBtn.onclick = clearAllWords;
+            document.querySelector('.input-section').appendChild(clearBtn);
+        }
+        
+        // 初始化页面
+        initPage();
+    </script>
+</body>
+</html>
