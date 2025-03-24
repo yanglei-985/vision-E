@@ -425,8 +425,8 @@
                             <input type="number" id="initial-ease" value="250" min="130" max="500">
                         </div>
                         <div class="setting-row">
-                            <label>包含法法释义</label>
-                            <input type="checkbox" id="include-french-def" checked>
+                            <label>包含英英释义</label>
+                            <input type="checkbox" id="include-english-def" checked>
                     </div>
                 </div>
                     <button id="export-anki-btn" class="btn" style="margin-top: 15px;">导出Anki格式</button>
@@ -445,7 +445,7 @@
             <h3 style="color: white; margin-bottom: 15px;">请使用这个单词造一个句子：</h3>
             <textarea class="sentence-input" id="sentence-input" placeholder="请用英语造句..." rows="3"></textarea>
             <div class="sentence-feedback" id="sentence-feedback">
-                <div class="feedback-header">语法分析：</div>
+                <div class="feedback-header">语英分析：</div>
                 <div id="feedback-content"></div>
                 <div class="corrected-sentence" id="corrected-sentence"></div>
                     </div>
@@ -474,8 +474,8 @@
         
     <script>
         // 初始化本地存储
-        let words = JSON.parse(localStorage.getItem('frenchWords')) || [];
-        let wordStats = JSON.parse(localStorage.getItem('frenchWordStats')) || {};
+        let words = JSON.parse(localStorage.getItem('englishWords')) || [];
+        let wordStats = JSON.parse(localStorage.getItem('englishWordStats')) || {};
         const wordInput = document.getElementById('word-input');
         const addBtn = document.getElementById('add-btn');
         const wordsList = document.getElementById('words-list');
@@ -498,7 +498,7 @@
         let currentWord = '';
         let currentIndex = -1;
         
-        // Anki算法相关常量
+        // Anki算英相关常量
         const AGAIN_INTERVAL = 1; // 1天
         const HARD_INTERVAL_FACTOR = 1.2;
         const GOOD_INTERVAL_FACTOR = 2.0;
@@ -575,7 +575,7 @@
             const word = wordInput.value.trim();
             if (word && !words.includes(word)) {
                 words.push(word);
-                localStorage.setItem('frenchWords', JSON.stringify(words));
+                localStorage.setItem('englishWords', JSON.stringify(words));
                 
                 // 初始化单词统计数据
                 if (!wordStats[word]) {
@@ -586,7 +586,7 @@
                         nextReview: new Date().toISOString(),
                         lastReview: null
                     };
-                    localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+                    localStorage.setItem('englishWordStats', JSON.stringify(wordStats));
                 }
                 
                 wordInput.value = '';
@@ -600,12 +600,12 @@
         function removeWord(index) {
             const word = words[index];
             words.splice(index, 1);
-            localStorage.setItem('frenchWords', JSON.stringify(words));
+            localStorage.setItem('englishWords', JSON.stringify(words));
             
             // 删除单词统计数据
             if (wordStats[word]) {
                 delete wordStats[word];
-                localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+                localStorage.setItem('englishWordStats', JSON.stringify(wordStats));
             }
             
             updateWordsList();
@@ -647,7 +647,7 @@
                 return;
             }
             
-            // 使用Anki算法选择下一个单词
+            // 使用Anki算英选择下一个单词
             currentWord = getNextReviewWord();
             currentIndex = words.indexOf(currentWord);
             
@@ -723,7 +723,7 @@
             
             // 保存更新
             wordStats[currentWord] = stats;
-            localStorage.setItem('frenchWordStats', JSON.stringify(wordStats));
+            localStorage.setItem('englishWordStats', JSON.stringify(wordStats));
             
             // 显示下一个单词
             showRandomWord();
@@ -790,7 +790,7 @@
                     // 分离解释和例句
                     const parts = content.split('\n');
                     let chineseExplanation = '';
-                    let frenchExplanation = '';
+                    let englishhExplanation = '';
                     let exampleSentence = '';
                     let sentenceAnalysis = '';
                     
@@ -812,7 +812,7 @@
                     
                     // 缓存结果
                     localStorage.setItem(`def_${currentWord}`, JSON.stringify({
-                        frenchDef: frenchExplanation,
+                        englishDef: englishExplanation,
                         chineseDef: chineseExplanation,
                         example: exampleSentence,
                         exampleAnalysis: sentenceAnalysis
@@ -833,7 +833,7 @@
                         }, 300);
                     }, 100);
                 } else {
-                    explanation.textContent = '无法获取解释，请尝试查询详细释义。';
+                    explanation.textContent = '无英获取解释，请尝试查询详细释义。';
                     explanation.classList.add('show');
                 }
             } catch (error) {
@@ -901,7 +901,7 @@
                 });
                 
                 // 保存并更新显示
-                localStorage.setItem('frenchWords', JSON.stringify(words));
+                localStorage.setItem('englishWords', JSON.stringify(words));
                 updateWordsList();
                 
                 alert(`成功导入 ${addedCount} 个新单词！`);
@@ -915,7 +915,7 @@
         function clearAllWords() {
             if (confirm('确定要清空所有单词吗？此操作不可撤销！')) {
                 words = [];
-                localStorage.setItem('frenchWords', JSON.stringify(words));
+                localStorage.setItem('englishWords', JSON.stringify(words));
                 updateWordsList();
             }
         }
@@ -1023,7 +1023,7 @@
                     });
                     
                     // 保存并更新显示
-                    localStorage.setItem('frenchWords', JSON.stringify(words));
+                    localStorage.setItem('englishWords', JSON.stringify(words));
                     updateWordsList();
                     
                     // 清空输入框
@@ -1060,7 +1060,7 @@
             
             try {
                 // 准备CSV内容
-                let csvContent = '单词,法语释义,中文释义,例句';
+                let csvContent = '单词,英语释义,中文释义,例句';
                 if (includeProgress) {
                     csvContent += ',学习进度,下次复习日期';
                 }
@@ -1071,8 +1071,8 @@
                     let row = [word];
                     
                     if (includeExplanations) {
-                        // 获取单词的法法释义和例句
-                        let frenchDef = '';
+                        // 获取单词的英英释义和例句
+                        let englishDef = '';
                         let chineseDef = '';
                         let example = '';
                         
@@ -1080,19 +1080,19 @@
                             // 检查是否已有缓存数据
                             if (localStorage.getItem(`def_${word}`)) {
                                 const cachedData = JSON.parse(localStorage.getItem(`def_${word}`));
-                                frenchDef = cachedData.frenchDef || '';
+                                englishDef = cachedData.englishDef || '';
                                 chineseDef = cachedData.chineseDef || '';
                                 example = cachedData.example || '';
                             } else {
                                 // 调用API获取释义
                                 const data = await getWordDefinitionAndExample(word);
-                                frenchDef = data.frenchDef || '';
+                                englishDef = data.englishDef || '';
                                 chineseDef = data.chineseDef || '';
                                 example = data.example || '';
                                 
                                 // 缓存结果
                                 localStorage.setItem(`def_${word}`, JSON.stringify({
-                                    frenchDef,
+                                    englishDef,
                                     chineseDef,
                                     example
                                 }));
@@ -1100,12 +1100,12 @@
                 } catch (error) {
                             console.error(`获取单词"${word}"释义失败:`, error);
                             // 使用空值占位
-                            frenchDef = '';
+                            englishDef = '';
                             chineseDef = '';
                             example = '';
                         }
                         
-                        row.push(csvEscape(frenchDef));
+                        row.push(csvEscape(englishDef));
                         row.push(csvEscape(chineseDef));
                         row.push(csvEscape(example));
                     } else {
@@ -1136,7 +1136,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.setAttribute('href', url);
-                link.setAttribute('download', `french_words_${new Date().toISOString().split('T')[0]}.csv`);
+                link.setAttribute('download', `english_words_${new Date().toISOString().split('T')[0]}.csv`);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
@@ -1162,7 +1162,7 @@
             
             const template = document.getElementById('anki-template').value;
             const initialEase = document.getElementById('initial-ease').value;
-            const includeFrenchDef = document.getElementById('include-french-def').checked;
+            const includeenglishDef = document.getElementById('include-english-def').checked;
             
             // 显示加载状态
             const btn = document.getElementById('export-anki-btn');
@@ -1180,17 +1180,17 @@
                         ankiContent = '正面;背面;标签;学习阶段;简易度;间隔;到期日期\n';
                         break;
                     case 'advanced':
-                        ankiContent = '单词;法法释义;中文释义;例句;例句分析;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
+                        ankiContent = '单词;英英释义;中文释义;例句;例句分析;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
                         break;
                     case 'cloze':
-                        ankiContent = '填空文本;单词;法法释义;中文释义;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
+                        ankiContent = '填空文本;单词;英英释义;中文释义;用户造句;纠正后的句子;标签;学习阶段;简易度;间隔;到期日期\n';
                         break;
                 }
                 
                 // 为每个单词生成Anki卡片
                 for (const word of words) {
                     // 获取单词的释义和例句
-                    let frenchDef = '';
+                    let englishDef = '';
                     let chineseDef = '';
                     let example = '';
                     let exampleAnalysis = '';
@@ -1199,21 +1199,21 @@
                         // 检查是否已有缓存数据
                         if (localStorage.getItem(`def_${word}`)) {
                             const cachedData = JSON.parse(localStorage.getItem(`def_${word}`));
-                            frenchDef = cachedData.frenchDef || '';
+                            englishDef = cachedData.englishDef || '';
                             chineseDef = cachedData.chineseDef || '';
                             example = cachedData.example || '';
                             exampleAnalysis = cachedData.exampleAnalysis || '';
                         } else {
                             // 调用API获取释义
                             const data = await getWordDefinitionAndExample(word);
-                            frenchDef = data.frenchDef || '';
+                            englishDef = data.englishDef || '';
                             chineseDef = data.chineseDef || '';
                             example = data.example || '';
                             exampleAnalysis = data.exampleAnalysis || '';
                             
                             // 缓存结果
                             localStorage.setItem(`def_${word}`, JSON.stringify({
-                                frenchDef,
+                                englishDef,
                                 chineseDef,
                                 example,
                                 exampleAnalysis
@@ -1222,7 +1222,7 @@
                 } catch (error) {
                         console.error(`获取单词"${word}"释义失败:`, error);
                         // 使用空值占位
-                        frenchDef = '';
+                        englishDef = '';
                         chineseDef = '';
                         example = '';
                         exampleAnalysis = '';
@@ -1258,8 +1258,8 @@
                         case 'basic':
                             row = [
                                 ankiEscape(word), // 正面
-                                ankiEscape(`${chineseDef}${includeFrenchDef ? '<br><br><i>' + frenchDef + '</i>' : ''}`), // 背面
-                                'French::Vocabulary', // 标签
+                                ankiEscape(`${chineseDef}${includeenglishDef ? '<br><br><i>' + englishDef + '</i>' : ''}`), // 背面
+                                'english::Vocabulary', // 标签
                                 learningStage,
                                 stats.ease,
                                 stats.interval,
@@ -1317,7 +1317,7 @@
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.setAttribute('href', url);
-                link.setAttribute('download', `anki_french_${new Date().toISOString().split('T')[0]}.csv`);
+                link.setAttribute('download', `anki_english_${new Date().toISOString().split('T')[0]}.csv`);
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
@@ -1386,7 +1386,7 @@
                         // 尝试解析JSON响应
                         const jsonResponse = JSON.parse(content);
                         return {
-                            frenchDef: jsonResponse.frenchDef || '',
+                            englishDef: jsonResponse.englishDef || '',
                             chineseDef: jsonResponse.chineseDef || '',
                             example: jsonResponse.example || '',
                             exampleAnalysis: jsonResponse.exampleAnalysis || ''
@@ -1401,7 +1401,7 @@
                         const analysisMatch = content.match(/例句分析[:：]\s*(.+)/);
                         
                         return {
-                            frenchDef: frenchDefMatch ? frenchDefMatch[1].trim() : '',
+                            englishDef: englishDefMatch ? englishDefMatch[1].trim() : '',
                             chineseDef: chineseDefMatch ? chineseDefMatch[1].trim() : '',
                             example: exampleMatch ? exampleMatch[1].trim() : '',
                             exampleAnalysis: analysisMatch ? analysisMatch[1].trim() : ''
@@ -1410,7 +1410,7 @@
                 }
                 
                 return {
-                    frenchDef: '',
+                    englishDef: '',
                     chineseDef: '',
                     example: '',
                     exampleAnalysis: ''
@@ -1433,7 +1433,7 @@
 
             // 显示造句练习区域
             sentencePractice.style.display = 'flex';
-            sentenceInput.placeholder = `请使用"${currentWord}"造一个法语句子...`;
+            sentenceInput.placeholder = `请使用"${currentWord}"造一个英语句子...`;
             sentenceFeedback.classList.remove('show');
             sentenceInput.focus();
             
@@ -1469,11 +1469,11 @@
                         messages: [
                             {
                                 role: 'system',
-                                content: '你是一位严谨的英语语法专家，能够分析用户的英语句子。请特别注意：\n\n1. 仔细确认单词的单复数形式，避免误判。检查名词和形容词的性数配合是否正确。\n2. 谨慎判断专业术语或特殊表达，某些固定搭配可能有自己的规则。\n3. 在作出判断前，请先多角度思考用户的表达是否可能是正确的。\n\n请以下面的格式回复：\n\n语法分析：[分析用户句子中的语法问题，注意避免误判单复数]\n\n改进建议：[如有必要，给出具体的改进建议]\n\n修正后的句子：[如果用户句子有误，提供修正后的句子；如果基本正确，可以提供更地道的表达]'
+                                content: '你是一位严谨的英语语英专家，能够分析用户的英语句子。请特别注意：\n\n1. 仔细确认单词的单复数形式，避免误判。检查名词和形容词的性数配合是否正确。\n2. 谨慎判断专业术语或特殊表达，某些固定搭配可能有自己的规则。\n3. 在作出判断前，请先多角度思考用户的表达是否可能是正确的。\n\n请以下面的格式回复：\n\n语英分析：[分析用户句子中的语英问题，注意避免误判单复数]\n\n改进建议：[如有必要，给出具体的改进建议]\n\n修正后的句子：[如果用户句子有误，提供修正后的句子；如果基本正确，可以提供更地道的表达]'
                             },
                             {
                                 role: 'user',
-                                content: `评估这个英语句子，检查是否有语法错误或搭配问题。单词是"${currentWord}"，用户的句子是："${sentence}"。请特别注意不要对单复数形式做出误判。`
+                                content: `评估这个英语句子，检查是否有语英错误或搭配问题。单词是"${currentWord}"，用户的句子是："${sentence}"。请特别注意不要对单复数形式做出误判。`
                             }
                         ],
                         temperature: 0.5,
@@ -1487,7 +1487,7 @@
                     const content = data.choices[0].message.content;
                     
                     // 解析返回的内容
-                    const grammarAnalysisMatch = content.match(/语法分析[:：]([\s\S]*?)(?=\n\n改进建议|$)/);
+                    const grammarAnalysisMatch = content.match(/语英分析[:：]([\s\S]*?)(?=\n\n改进建议|$)/);
                     const suggestionsMatch = content.match(/改进建议[:：]([\s\S]*?)(?=\n\n修正后的句子|$)/);
                     const correctedMatch = content.match(/修正后的句子[:：]([\s\S]*?)$/);
                     
@@ -1530,7 +1530,7 @@
                     }, 1000);
                     
                 } else {
-                    feedbackContent.innerHTML = '<div class="error-item">无法分析句子，请重试</div>';
+                    feedbackContent.innerHTML = '<div class="error-item">无英分析句子，请重试</div>';
                     sentenceFeedback.classList.add('show');
                 }
             } catch (error) {
