@@ -595,7 +595,87 @@
                 alert('该单词已存在！');
             }
         }
+
+
+        // 更新单词列表显示（修改后的版本）
+function updateWordsList() {
+    if (words.length === 0) {
+        emptyMessage.classList.remove('hidden');
+        wordsList.innerHTML = '';
+        wordsList.appendChild(emptyMessage);
+        return;
+    }
+    
+    emptyMessage.classList.add('hidden');
+    wordsList.innerHTML = '';
+    
+    words.forEach((word, index) => {
+        const wordItem = document.createElement('div');
+        wordItem.className = 'word-item';
         
+        const wordText = document.createElement('span');
+        wordText.className = 'word-text';
+        wordText.textContent = word;
+        
+        // 点击单词时直接进入对应单词的全屏展示界面
+        wordText.style.cursor = 'pointer';
+        wordText.addEventListener('click', () => {
+            showSpecificWord(word);
+        });
+        
+        // 添加显示间隔信息
+        if (wordStats[word]) {
+            const dueDate = new Date(wordStats[word].nextReview);
+            const today = new Date();
+            const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.style.marginLeft = '10px';
+            statusSpan.style.fontSize = '12px';
+            if (daysUntilDue <= 0) {
+                statusSpan.textContent = '今天到期';
+                statusSpan.style.color = '#f44336';
+            } else {
+                statusSpan.textContent = `${daysUntilDue}天后复习`;
+                statusSpan.style.color = '#4caf50';
+            }
+            wordText.appendChild(statusSpan);
+        }
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.onclick = () => removeWord(index);
+        
+        wordItem.appendChild(wordText);
+        wordItem.appendChild(removeBtn);
+        wordsList.appendChild(wordItem);
+    });
+}
+
+// 新增：直接展示指定单词的函数
+function showSpecificWord(word) {
+    if (!word) return;
+    
+    currentWord = word;
+    currentIndex = words.indexOf(word);
+    
+    displayWord.textContent = currentWord;
+    // 清除之前的解释和例句
+    explanation.textContent = '';
+    example.textContent = '';
+    explanation.classList.remove('show');
+    example.classList.remove('show');
+    
+    // 隐藏评级按钮和造句区域，等待用户点击操作
+    ratingButtons.classList.add('hidden');
+    sentencePractice.style.display = 'none';
+    sentenceInput.value = '';
+    sentenceFeedback.classList.remove('show');
+    
+    fullscreenDisplay.classList.remove('hidden');
+}
+
         // 删除单词
         function removeWord(index) {
             const word = words[index];
